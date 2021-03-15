@@ -13,6 +13,6 @@ namespace ApiTest.Models {
         [StringLength( 30 )]
         public string categoria { get; set; }
 
-        //public List<IEnumerable<Cliente>> Clientes { get; set; }
+        public List<Cliente> Clientes { get; set; }
     }
 }

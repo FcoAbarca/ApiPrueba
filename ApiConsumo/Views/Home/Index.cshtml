@@ -1,0 +1,194 @@
+﻿@{
+    ViewData["Title"] = "Consumo API";
+}
+
+<div class="container" id="listadoRegistro">
+    <div class="col-1 float-left text-right">
+        Buscar:
+    </div>
+    <div class="col-2 float-left mb-2">
+        <select id="tipoFiltro" class="form-control">
+            <option value="0">Todos</option>
+            <option value="1">Categoria</option>
+            <option value="2">Nombre</option>
+        </select>
+    </div>
+    <div class="col-3 float-left">
+        <select id="categoriaFiltro" class="form-control">
+            <option value="2">Nombre</option>
+        </select>
+        <input type="text" id="textoBuscar" class="form-control" />
+    </div>
+    <div class="col-6 float-left text-right">
+        <button class='btn btn-success' onclick="nuevoCliente()">Agregar Cliente</button>
+    </div>
+    <table class="table">
+        <thead>
+        <th>No</th>
+        <th>Categoria</th>
+        <th>Nombre Cliente</th>
+        <th></th>
+        </thead>
+        <tbody id="bodyTable">
+        </tbody>
+    </table>
+
+</div>
+<div class="container" id="nuevoRegistro">
+    <input type="hidden" id="idCliente" value="0"/> 
+    <div class="form-group">
+        <label>Categoria</label>
+        <select id="categoria" class="form-control">
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Nombres</label>
+        <input type="text" id="nombres" class="form-control"/>
+    </div>
+    <div class="form-group">
+        <label>Apellidos</label>
+        <input type="text" id="apellidos" class="form-control"/>
+    </div>
+    <div class="form-group">
+        <button class='btn btn-success' onclick="guardarCliente()">Guardar</button>
+        <button class='btn btn-danger' onclick="cerrarForm()">Cerrar</button>
+    </div>
+</div>
+<script>
+    var url = 'https://localhost:44341/Api';
+
+    const cargarCategoria = (data, control) => {
+        $(control).empty();
+
+        data.map(item => $(control).append(`<option value='${item.id}'>${item.categoria}</option>`));
+    }
+
+    const cargarTabla = (ruta = "") => {
+        ObtenerData(`${url}/Clientes/${ruta}`)
+            .then(data => {
+                let contador = 1;
+
+                $("#bodyTable").html("");
+
+                data.map(cliente => {
+                    $("#bodyTable").append(`<tr><td>${contador}</td>
+                                        <td>${cliente.categoria.categoria}</td>
+                                        <td>${cliente.nombres} ${cliente.apellidos}</td>
+                                        <td class='text-right'>
+                                            <button class='btn btn-primary' onclick='nuevoCliente(${cliente.id})'>Editar</button>
+                                            <button class='btn btn-danger' onclick='quitarCliente(${cliente.id})'>Borrar</button>
+                                                </td></tr>`);
+                    contador++;
+                });
+            })
+            .catch(reason => console.log(reason.message));
+    }
+
+    const nuevoCliente = (id = 0) => {
+        $("#listadoRegistro").hide();
+        $("#nuevoRegistro").show();
+        $("#idCliente").val(id);
+        $("#nombres, #apellidos").val("");
+
+        if (id > 0)
+            cargarCliente(id);
+    }
+    const cargarCliente = (id) => {
+        ObtenerData(`${url}/Clientes/${id}`)
+            .then(data => {
+                $("#categoria").val(data.categoriaID);
+                $("#nombres").val(data.nombres);
+                $("#apellidos").val(data.apellidos);
+            })
+            .catch(reason => console.log(reason.message))
+    }
+    const guardarCliente = () => {
+        if ($("#categoria").val() == "" || $("#nombres").val() == "" || $("#apellidos").val() == "") {
+            return false;
+        }
+        data = { id: parseInt($("#idCliente").val()),
+                 categoriaID: parseInt($("#categoria").val()),
+                 nombres: $("#nombres").val(),
+                 apellidos: $("#apellidos").val()
+        }
+        let metodo = parseInt($("#idCliente").val()) === 0 ? 'POST' : 'PUT';
+        let direccion = parseInt($("#idCliente").val()) === 0 ? 'Clientes' : `Clientes/${parseInt($("#idCliente").val())}`;
+
+        UpdateData(`${url}/${direccion}`, data, metodo)
+            .then(response => {
+                cerrarForm();
+                cargarTabla();
+            })
+            .catch(reason => console.log(reason.message));
+    }
+    const quitarCliente = (id) => {
+        DeleteData(`${url}/Clientes/${id}`)
+            .then(response => {
+                cargarTabla();
+            })
+            .catch(reason => console.log(reason.message));
+    }
+    const cerrarForm = () => {
+        $("#listadoRegistro").show();
+        $("#nuevoRegistro").hide();
+    }
+    const ObtenerData = async (url) => {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data;
+    }
+
+    const UpdateData = async (url, data, method) => {
+        const response = await fetch(url, {
+            method: method,
+            body: JSON.stringify(data),
+            headers: { "Content-Type": "application/json" }
+        });
+        return response;
+    }
+
+    const DeleteData = async (url) => {
+        const response = await fetch(url, {
+            method: 'DELETE',
+        });
+        return response;
+    }
+
+    $("#categoriaFiltro").change(function () {
+        cargarTabla(`Categoria/${$(this).val()}`);
+    });
+    $('#textoBuscar').keyup(function (e) {
+        let code = (e.keyCode ? e.keyCode : e.which);
+                
+        if (code == 13)
+            cargarTabla(`nombre/${$(this).val()}` );
+    });
+    $("#tipoFiltro").change(function () {
+        if ($(this).val() == 0) {
+            $("#categoriaFiltro, #textoBuscar").hide();
+            cargarTabla();
+        } else if ($(this).val() == 1) {
+            $("#categoriaFiltro").show();
+            $("#textoBuscar").hide();
+            cargarTabla(`Categoria/${$("#categoriaFiltro").val()}`);
+        } else {
+            $("#categoriaFiltro").hide();
+            $("#textoBuscar").show();
+            $("#textoBuscar").val('');
+        }
+    });
+
+    $(document).ready(function () {
+        cargarTabla();
+
+        ObtenerData(`${url}/Categorias`)
+            .then(data => {
+                arrCategorias = data;
+                cargarCategoria(data, "#categoriaFiltro");
+                cargarCategoria(data, "#categoria");
+            })
+            .catch(reason => console.log(reason.message))
+
+        $("#categoriaFiltro, #textoBuscar, #nuevoRegistro").hide();
+    })
+</script>

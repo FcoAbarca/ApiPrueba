@@ -17,14 +17,25 @@ namespace ApiTest.Controllers {
         }
 
         [HttpGet]
-        public IEnumerable<ViewCliente> GetAll() {
-            return (from a in _context.Clientes
+        public IEnumerable<Cliente> GetAll() {
+            return _context.Clientes.Include(x=> x.Categoria).ToList();
+            
+            /*return (from a in _context.Clientes
                     join b in _context.Categorias on a.categoriaID equals b.id
                     select new ViewCliente {
                         id = a.id,
                         categoria = b.categoria,
                         nombreCompleto = a.nombres + " " + a.apellidos,
-                    }).ToArray();
+                    }).ToArray();*/
+        }
+        [HttpGet("{id}")]
+        public IActionResult GetId(int id) {
+            var cliente = _context.Clientes.Find( id );
+
+            if (cliente == null)
+                return NotFound();
+            else
+                return Ok( cliente );
         }
         [HttpGet("categoria/{categoria}")]
         public IActionResult GetCategoria( int categoria) {
@@ -36,21 +47,22 @@ namespace ApiTest.Controllers {
                         categoria = b.categoria,
                         nombreCompleto = a.nombres + " " + a.apellidos,
                     }).ToArray();
+
             if (clientes == null)
                 return NotFound();
             else
                 return Ok( clientes );
         }
-        [HttpGet( "{nombre}" )]
+        [HttpGet( "nombre/{nombre}" )]
         public IActionResult GetNombre(string nombre) {
             var clientes = (from a in _context.Clientes
                     join b in _context.Categorias on a.categoriaID equals b.id
-                    where a.nombres.ToUpper() == nombre.ToUpper()
                     select new ViewCliente {
                         id = a.id,
                         categoria = b.categoria,
                         nombreCompleto = a.nombres + " " + a.apellidos,
-                    }).ToArray();
+                    }).ToArray().Where( a => a.nombreCompleto.ToUpper().Contains( nombre.ToUpper() ) );
+
             if (clientes == null)
                 return NotFound();
             else

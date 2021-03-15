@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
+
 namespace ApiTest.Models {
     [Table( "CLIENTES" )]
     public class Cliente {
@@ -17,8 +19,7 @@ namespace ApiTest.Models {
         public string nombres { get; set; }
         [StringLength( 50 )]
         public string apellidos { get; set; }
-
-        //public virtual Categoria Categoria { get; set; }
+        public Categoria Categoria { get; set; }
 
     }
 }

@@ -26,8 +26,15 @@ namespace ApiTest {
             services.AddDbContext<_dbContext>( options => options.UseInMemoryDatabase( "ApiTest"));
                // "  .UseSqlServer( Configuration.GetConnectionString( "API" ) ) );
             services.AddControllers();
-        }
 
+            services.AddCors( options => {
+                options.AddPolicy( name: "General", builder => { builder.WithOrigins( "https://localhost:44311" ).AllowAnyHeader().AllowAnyMethod(); } );
+            } );
+
+
+            services.AddControllersWithViews().AddNewtonsoftJson( options =>
+                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+        }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, _dbContext context) {
             if (env.IsDevelopment()) {
@@ -39,7 +46,7 @@ namespace ApiTest {
             app.UseRouting();
 
             app.UseAuthorization();
-
+            app.UseCors( "General" );
             app.UseEndpoints( endpoints => {
                 endpoints.MapControllers();
             } );
